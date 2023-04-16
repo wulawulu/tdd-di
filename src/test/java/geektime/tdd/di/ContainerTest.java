@@ -5,6 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ContainerTest {
@@ -26,11 +28,18 @@ public class ContainerTest {
 
             context.bind(Component.class, instance);
 
-            assertSame(instance, context.get(Component.class));
+            assertSame(instance, context.get(Component.class).get());
         }
 
         //TODO: abstract class
         //TODO: interface
+
+        @Test
+        public void should_return_empty_if_component_not_define() {
+            Optional<Component> component = context.get(Component.class);
+            assertTrue(component.isEmpty());
+        }
+
         @Nested
         public class ConstructorInjection {
             @Test
@@ -38,7 +47,7 @@ public class ContainerTest {
 
                 context.bind(Component.class, ComponentImplementation.class);
 
-                Component instance = context.get(Component.class);
+                Component instance = context.get(Component.class).get();
 
                 assertNotNull(instance);
 
@@ -53,7 +62,7 @@ public class ContainerTest {
                 context.bind(Component.class, ComponentWithInjectConstructor.class);
                 context.bind(Dependency.class, dependency);
 
-                Component instance = context.get(Component.class);
+                Component instance = context.get(Component.class).get();
                 assertNotNull(instance);
                 assertSame(dependency, ((ComponentWithInjectConstructor) instance).getDependency());
             }
@@ -64,7 +73,7 @@ public class ContainerTest {
                 context.bind(Dependency.class, DependencyWithInjectConstructor.class);
                 context.bind(String.class, "indirect dependency");
 
-                Component component = context.get(Component.class);
+                Component component = context.get(Component.class).get();
                 assertNotNull(component);
 
                 Dependency dependency = ((ComponentWithInjectConstructor) component).getDependency();
@@ -82,8 +91,23 @@ public class ContainerTest {
             public void should_throw_exception_if_no_inject_nor_default_constructors_provided() {
                 assertThrows(IllegalComponentException.class, () -> context.bind(Component.class, ComponentWithNoInjectConstructorNorDefaultConstructor.class));
             }
+
+            //TODO: dependencies not exist
+            @Test
+            public void should_throw_exception_if_dependency_not_found() {
+                context.bind(Component.class, ComponentWithInjectConstructor.class);
+
+                assertThrows(DependencyNotFoundException.class, () -> context.get(Component.class).orElseThrow());
+            }
+
             //TODO:
-            //TODO:
+            @Test
+            public void should_throw_exception_if_cyclic_dependency_found() {
+                context.bind(Component.class, ComponentWithInjectConstructor.class);
+                context.bind(Dependency.class, DependencyDependedOnComponent.class);
+
+                assertThrows(CyclicDependenciesFound.class, () -> context.get(Component.class));
+            }
         }
 
         @Nested
@@ -160,6 +184,15 @@ class DependencyWithInjectConstructor implements Dependency {
 
     public String getDependency() {
         return dependency;
+    }
+}
+
+class DependencyDependedOnComponent implements Dependency {
+    Component component;
+
+    @Inject
+    public DependencyDependedOnComponent(Component component) {
+        this.component = component;
     }
 }
 
