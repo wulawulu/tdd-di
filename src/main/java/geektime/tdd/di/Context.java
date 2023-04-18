@@ -40,7 +40,7 @@ public class Context {
         if (injectConstructors.size() > 1) {
             throw new IllegalComponentException();
         }
-        return (Constructor<Type>) injectConstructors.stream().filter(c -> c.isAnnotationPresent(Inject.class)).findFirst().orElseGet(() -> {
+        return (Constructor<Type>) injectConstructors.stream().findFirst().orElseGet(() -> {
             try {
                 return implementation.getConstructor();
             } catch (NoSuchMethodException e) {
