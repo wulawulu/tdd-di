@@ -23,16 +23,40 @@ public class Context {
     void bind(Class<Type> type, Class<Implementation> implementation) {
         Constructor<Implementation> constructor = getInjectConstructor(implementation);
 
-        providers.put(type, (Provider<Type>) () -> {
+        providers.put(type, new ConstructorInjectProvider<>(type, constructor));
+    }
+
+    class ConstructorInjectProvider<T> implements Provider<T> {
+        private final Class<?> componentType;
+        private final Constructor<T> injectConstructor;
+        private boolean constructing = false;
+
+
+        public ConstructorInjectProvider(Class<?> componentType, Constructor<T> injectConstructor) {
+            this.componentType = componentType;
+            this.injectConstructor = injectConstructor;
+        }
+
+        @Override
+        public T get() {
+            if (constructing) {
+                throw new CyclicDependenciesFoundException(componentType);
+            }
+
             try {
-                Object[] dependencies = stream(constructor.getParameters())
-                        .map(p -> get(p.getType()).orElseThrow(DependencyNotFoundException::new))
+                constructing = true;
+                Object[] dependencies = stream(injectConstructor.getParameters())
+                        .map(p -> Context.this.get(p.getType()).orElseThrow(() -> new DependencyNotFoundException(p.getType(), componentType)))
                         .toArray();
-                return constructor.newInstance(dependencies);
+                return injectConstructor.newInstance(dependencies);
+            } catch (CyclicDependenciesFoundException e) {
+                throw new CyclicDependenciesFoundException(componentType, e);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException exception) {
                 throw new RuntimeException();
+            } finally {
+                constructing = false;
             }
-        });
+        }
     }
 
     private static <Type> Constructor<Type> getInjectConstructor(Class<Type> implementation) {
