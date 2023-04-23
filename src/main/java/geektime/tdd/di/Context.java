@@ -26,6 +26,10 @@ public class Context {
         providers.put(type, new ConstructorInjectProvider<>(type, constructor));
     }
 
+    public <Type> Optional<Type> get(Class<Type> type) {
+        return Optional.ofNullable(providers.get(type)).map(provider -> (Type) provider.get());
+    }
+
     class ConstructorInjectProvider<T> implements Provider<T> {
         private final Class<?> componentType;
         private final Constructor<T> injectConstructor;
@@ -46,7 +50,8 @@ public class Context {
             try {
                 constructing = true;
                 Object[] dependencies = stream(injectConstructor.getParameters())
-                        .map(p -> Context.this.get(p.getType()).orElseThrow(() -> new DependencyNotFoundException(p.getType(), componentType)))
+                        .map(p -> Context.this.get(p.getType())
+                                .orElseThrow(() -> new DependencyNotFoundException(componentType,p.getType() )))
                         .toArray();
                 return injectConstructor.newInstance(dependencies);
             } catch (CyclicDependenciesFoundException e) {
@@ -60,7 +65,8 @@ public class Context {
     }
 
     private static <Type> Constructor<Type> getInjectConstructor(Class<Type> implementation) {
-        List<Constructor<?>> injectConstructors = stream(implementation.getConstructors()).filter(c -> c.isAnnotationPresent(Inject.class)).toList();
+        List<Constructor<?>> injectConstructors = stream(implementation.getConstructors())
+                .filter(c -> c.isAnnotationPresent(Inject.class)).toList();
         if (injectConstructors.size() > 1) {
             throw new IllegalComponentException();
         }
@@ -73,8 +79,4 @@ public class Context {
         });
     }
 
-
-    public <Type> Optional<Type> get(Class<Type> type) {
-        return Optional.ofNullable(providers.get(type)).map(provider -> (Type) provider.get());
-    }
 }

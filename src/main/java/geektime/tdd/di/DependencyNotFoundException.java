@@ -6,7 +6,7 @@ public class DependencyNotFoundException extends RuntimeException {
 
     private Class<?> component;
 
-    public DependencyNotFoundException(Class<?> dependency, Class<?> component) {
+    public DependencyNotFoundException(Class<?> component, Class<?> dependency) {
         this.dependency = dependency;
         this.component = component;
     }
