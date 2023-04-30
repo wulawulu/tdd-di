@@ -63,7 +63,6 @@ public class ContextConfig {
 
         @Override
         public T get(Context context) {
-            Context context1 = getContext();
             if (constructing) {
                 throw new CyclicDependenciesFoundException(componentType);
             }
@@ -71,7 +70,7 @@ public class ContextConfig {
             try {
                 constructing = true;
                 Object[] dependencies = stream(injectConstructor.getParameters())
-                        .map(p -> context1.get(p.getType())
+                        .map(p -> context.get(p.getType())
                                 .orElseThrow(() -> new DependencyNotFoundException(componentType, p.getType())))
                         .toArray();
                 return injectConstructor.newInstance(dependencies);
