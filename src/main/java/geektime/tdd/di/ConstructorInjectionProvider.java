@@ -11,12 +11,12 @@ import java.util.List;
 import static java.util.Arrays.stream;
 import static java.util.stream.Stream.concat;
 
-class ConstructorInjectProvider<T> implements ContextConfig.ComponentProvider<T> {
+class ConstructorInjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
     private final Constructor<T> injectConstructor;
     private final List<Field> injectFields;
     private final List<Method> injectMethods;
 
-    public ConstructorInjectProvider(Class<T> component) {
+    public ConstructorInjectionProvider(Class<T> component) {
         this.injectConstructor = getInjectConstructor(component);
         this.injectFields = getInjectFields(component);
         this.injectMethods = getInjectMethods(component);
@@ -61,7 +61,7 @@ class ConstructorInjectProvider<T> implements ContextConfig.ComponentProvider<T>
                             .filter(m -> m.isAnnotationPresent(Inject.class))
                             .filter(m -> injectMethods.stream().noneMatch(e -> e.getName().equals(m.getName()) &&
                                     Arrays.equals(e.getParameterTypes(), m.getParameterTypes())))
-                            .filter(m -> stream(component.getDeclaredMethods()).filter(m1->!m1.isAnnotationPresent(Inject.class))
+                            .filter(m -> stream(component.getDeclaredMethods()).filter(m1 -> !m1.isAnnotationPresent(Inject.class))
                                     .noneMatch(e -> e.getName().equals(m.getName()) &&
                                             Arrays.equals(e.getParameterTypes(), m.getParameterTypes())))
                             .toList());
@@ -85,9 +85,7 @@ class ConstructorInjectProvider<T> implements ContextConfig.ComponentProvider<T>
     private static <Type> Constructor<Type> getInjectConstructor(Class<Type> implementation) {
         List<Constructor<?>> injectConstructors = stream(implementation.getConstructors())
                 .filter(c -> c.isAnnotationPresent(Inject.class)).toList();
-        if (injectConstructors.size() > 1) {
-            throw new IllegalComponentException();
-        }
+        if (injectConstructors.size() > 1) throw new IllegalComponentException();
         return (Constructor<Type>) injectConstructors.stream().findFirst().orElseGet(() -> {
             try {
                 return implementation.getDeclaredConstructor();
