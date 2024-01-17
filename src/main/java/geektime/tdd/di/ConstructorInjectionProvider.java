@@ -61,6 +61,7 @@ class ConstructorInjectionProvider<T> implements ContextConfig.ComponentProvider
                             .filter(m -> m.isAnnotationPresent(Inject.class))
                             .filter(m -> injectMethods.stream().noneMatch(e -> e.getName().equals(m.getName()) &&
                                     Arrays.equals(e.getParameterTypes(), m.getParameterTypes())))
+                            // 对于子类已经覆写并且没有加@Inject注解的方法,其父类方法被覆写并且加@Inject的方法不能执行
                             .filter(m -> stream(component.getDeclaredMethods()).filter(m1 -> !m1.isAnnotationPresent(Inject.class))
                                     .noneMatch(e -> e.getName().equals(m.getName()) &&
                                             Arrays.equals(e.getParameterTypes(), m.getParameterTypes())))
