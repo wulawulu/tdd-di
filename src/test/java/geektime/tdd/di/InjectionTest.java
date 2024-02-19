@@ -4,7 +4,6 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.util.Optional;
 
@@ -27,23 +26,39 @@ public class InjectionTest {
     public class ConstructorInjection {
 
         @Nested
-        class Inject {
+        class Injection {
+
+            static class DefaultConstructor implements Component {
+                public DefaultConstructor() {
+                }
+            }
+
             @Test
             public void should_call_default_constructor_if_no_inject_constructor() {
-                ComponentWithDefaultConstructor instance = new ConstructorInjectionProvider<>(ComponentWithDefaultConstructor.class).get(context);
+                DefaultConstructor instance = new ConstructorInjectionProvider<>(DefaultConstructor.class).get(context);
 
                 assertNotNull(instance);
             }
 
+            static class InjectConstructor {
+                Dependency dependency;
+
+                @Inject
+                public InjectConstructor(Dependency dependency) {
+                    this.dependency = dependency;
+                }
+            }
+
+
             @Test
             public void should_inject_dependency_via_inject_constructor() {
-                ComponentWithInjectConstructor instance = new ConstructorInjectionProvider<>(ComponentWithInjectConstructor.class).get(context);
-                assertSame(dependency, instance.getDependency());
+                InjectConstructor instance = new ConstructorInjectionProvider<>(InjectConstructor.class).get(context);
+                assertSame(dependency, instance.dependency);
             }
 
             @Test
             public void should_include_dependency_from_inject_constructor() {
-                ConstructorInjectionProvider<ComponentWithInjectConstructor> provider = new ConstructorInjectionProvider<>(ComponentWithInjectConstructor.class);
+                ConstructorInjectionProvider<InjectConstructor> provider = new ConstructorInjectionProvider<>(InjectConstructor.class);
                 assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray());
             }
         }
@@ -51,12 +66,10 @@ public class InjectionTest {
         @Nested
         class IllegalInjectConstructors {
 
-
             static abstract class AbstractComponentClass implements Component {
                 public AbstractComponentClass() {
                 }
             }
-
 
             @Test
             public void should_throw_error_if_component_is_abstract() {
@@ -68,15 +81,24 @@ public class InjectionTest {
                 assertThrows(IllegalComponentException.class, () -> new ConstructorInjectionProvider<>(Component.class));
             }
 
+            static class MultiInjectConstructors implements Component {
+                @Inject public MultiInjectConstructors(AnotherDependency dependency) { }
+                @Inject public MultiInjectConstructors(Dependency dependency) { }
+            }
 
             @Test
             public void should_throw_exception_if_multi_inject_constructors_provided() {
-                assertThrows(IllegalComponentException.class, () -> new ConstructorInjectionProvider<>(ComponentWithMultiInjectConstructors.class));
+                assertThrows(IllegalComponentException.class, () -> new ConstructorInjectionProvider<>(MultiInjectConstructors.class));
+            }
+
+            class NoInjectNorDefaultConstructor implements Component {
+                public NoInjectNorDefaultConstructor(String name) {
+                }
             }
 
             @Test
             public void should_throw_exception_if_no_inject_nor_default_constructor_provided() {
-                assertThrows(IllegalComponentException.class, () -> new ConstructorInjectionProvider<>(ComponentWithNoInjectConstructorNorDefaultConstructor.class));
+                assertThrows(IllegalComponentException.class, () -> new ConstructorInjectionProvider<>(NoInjectNorDefaultConstructor.class));
             }
 
         }
