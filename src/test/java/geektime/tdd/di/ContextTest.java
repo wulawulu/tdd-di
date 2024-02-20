@@ -4,8 +4,12 @@ package geektime.tdd.di;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.internal.util.collections.Sets;
 
 import java.lang.reflect.ParameterizedType;
@@ -14,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -118,12 +123,37 @@ public class ContextTest {
             }
         }
 
-        @Test
-        public void should_throw_exception_if_dependency_not_found() {
-            config.bind(Component.class, ComponentWithInjectConstructor.class);
+        @ParameterizedTest
+        @MethodSource
+        public void should_throw_exception_if_dependency_not_found(Class<? extends Component> component) {
+            config.bind(Component.class, component);
             DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class, () -> config.getContext());
             assertEquals(Dependency.class, exception.getDependency());
             assertEquals(Component.class, exception.getComponent());
+        }
+
+        public static Stream<Arguments> should_throw_exception_if_dependency_not_found() {
+            return Stream.of(Arguments.of(Named.of("Inject Constructor", DependencyCheck.MissingDependencyConstructor.class)),
+                    Arguments.of(Named.of("Inject Field", DependencyCheck.MissingDependencyFiled.class)),
+                    Arguments.of(Named.of("Inject Method", DependencyCheck.MissingDependencyMethod.class))
+                    );
+        }
+
+        static class MissingDependencyConstructor implements Component {
+            @Inject
+            public MissingDependencyConstructor(Dependency dependency) {
+            }
+        }
+
+        static class MissingDependencyFiled implements Component {
+            @Inject
+            Dependency dependency;
+        }
+
+        static class MissingDependencyMethod implements Component {
+            @Inject
+            public void install(Dependency dependency) {
+            }
         }
 
         @Test
