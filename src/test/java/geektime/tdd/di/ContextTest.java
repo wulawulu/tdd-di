@@ -42,6 +42,47 @@ public class ContextTest {
 
     @Nested
     public class DependencyCheck {
+
+        static class ComponentWithInjectConstructor implements Component {
+            private Dependency dependency;
+
+            @Inject
+            public ComponentWithInjectConstructor(Dependency dependency) {
+                this.dependency = dependency;
+            }
+
+            public Dependency getDependency() {
+                return dependency;
+            }
+        }
+
+        static class DependencyDependedOnComponent implements Dependency {
+            private Component component;
+
+            @Inject
+            public DependencyDependedOnComponent(Component component) {
+                this.component = component;
+            }
+        }
+
+        static class AnotherDependencyDependedOnComponent implements AnotherDependency {
+            private Component component;
+
+            @Inject
+            public AnotherDependencyDependedOnComponent(Component component) {
+                this.component = component;
+            }
+        }
+
+        static class DependencyDependedOnAnotherDependency implements Dependency {
+            private AnotherDependency anotherDependency;
+
+            @Inject
+            public DependencyDependedOnAnotherDependency(AnotherDependency anotherDependency) {
+                this.anotherDependency = anotherDependency;
+            }
+        }
+
         @Test
         public void should_throw_exception_if_dependency_not_found() {
             config.bind(Component.class, ComponentWithInjectConstructor.class);
@@ -76,42 +117,3 @@ public class ContextTest {
     }
 }
 
-class ComponentWithInjectConstructor implements Component {
-    private Dependency dependency;
-
-    @Inject
-    public ComponentWithInjectConstructor(Dependency dependency) {
-        this.dependency = dependency;
-    }
-
-    public Dependency getDependency() {
-        return dependency;
-    }
-}
-
-class DependencyDependedOnComponent implements Dependency {
-    private Component component;
-
-    @Inject
-    public DependencyDependedOnComponent(Component component) {
-        this.component = component;
-    }
-}
-
-class AnotherDependencyDependedOnComponent implements AnotherDependency {
-    private Component component;
-
-    @Inject
-    public AnotherDependencyDependedOnComponent(Component component) {
-        this.component = component;
-    }
-}
-
-class DependencyDependedOnAnotherDependency implements Dependency {
-    private AnotherDependency anotherDependency;
-
-    @Inject
-    public DependencyDependedOnAnotherDependency(AnotherDependency anotherDependency) {
-        this.anotherDependency = anotherDependency;
-    }
-}
