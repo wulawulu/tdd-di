@@ -16,10 +16,6 @@ public class ContainerTest {
     public class DependenciesSelection {
         @Nested
         public class ProviderType{
-            //TODO could get Provider<T> from context
-            //TODO support inject constructor
-            //TODO support inject filed
-            //TODO support inject method
         }
     }
 

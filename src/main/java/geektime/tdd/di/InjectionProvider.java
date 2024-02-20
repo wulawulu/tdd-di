@@ -115,12 +115,20 @@ class InjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
         return injectMethods.stream().noneMatch(o -> isOverride(m, o));
     }
 
-    private static Object[] toDependencies(Context context, Executable constructor) {
-        return stream(constructor.getParameterTypes()).map(t -> context.get(t).get()).toArray();
+    private static Object[] toDependencies(Context context, Executable executable) {
+        return stream(executable.getParameters()).map(
+                p -> {
+                    Type type = p.getParameterizedType();
+                    if (type instanceof ParameterizedType) return context.get(((ParameterizedType) type)).get();
+                    return context.get(((Class<?>) type)).get();
+                }
+        ).toArray();
     }
 
     private static Object toDependency(Context context, Field field) {
-        return context.get(field.getType()).get();
+        Type type = field.getGenericType();
+        if (type instanceof ParameterizedType) return context.get(((ParameterizedType) type)).get();
+        return context.get(((Class<?>) type)).get();
     }
 }
 

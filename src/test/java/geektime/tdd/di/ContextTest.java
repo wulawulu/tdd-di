@@ -2,11 +2,14 @@
 package geektime.tdd.di;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.collections.Sets;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +41,38 @@ public class ContextTest {
             Optional<Component> component = config.getContext().get(Component.class);
             assertTrue(component.isEmpty());
         }
+
+        @Test
+        public void should_retrieve_binded_type_as_provider() {
+            Component instance = new Component() {
+            };
+            config.bind(Component.class, instance);
+            Context context = config.getContext();
+
+            ParameterizedType type = (ParameterizedType) new TypeLiteral<Provider<Component>>() {}.getType();
+
+            Provider<Component> provider = ((Provider<Component>) context.get(type).get());
+            assertSame(instance, provider.get());
+        }
+
+        @Test
+        public void should_not_retrieve_bind_type_as_unsupported_container() {
+            Component instance = new Component() {
+            };
+            config.bind(Component.class, instance);
+            Context context = config.getContext();
+
+            ParameterizedType type = (ParameterizedType) new TypeLiteral<List<Component>>() {}.getType();
+
+            assertTrue(context.get(type).isEmpty());
+        }
+
+        static abstract class TypeLiteral<T> {
+            public Type getType() {
+                return ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+            }
+        }
+
     }
 
     @Nested
