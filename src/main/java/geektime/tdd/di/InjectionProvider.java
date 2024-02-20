@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.stream;
@@ -109,8 +108,7 @@ class InjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
 
     private static <T> boolean isOverrideByNoInjectMethod(Class<T> component, Method m) {
         return stream(component.getDeclaredMethods()).filter(m1 -> !m1.isAnnotationPresent(Inject.class))
-                .noneMatch(e -> e.getName().equals(m.getName()) &&
-                        Arrays.equals(e.getParameterTypes(), m.getParameterTypes()));
+                .noneMatch(o -> isOverride(m, o));
     }
 
     private static boolean isOverrideByInjectMethod(Method m, List<Method> injectMethods) {
