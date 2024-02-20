@@ -54,7 +54,8 @@ public class ContextTest {
             config.bind(Component.class, instance);
             Context context = config.getContext();
 
-            ParameterizedType type = (ParameterizedType) new TypeLiteral<Provider<Component>>() {}.getType();
+            ParameterizedType type = (ParameterizedType) new TypeLiteral<Provider<Component>>() {
+            }.getType();
 
             Provider<Component> provider = ((Provider<Component>) context.get(type).get());
             assertSame(instance, provider.get());
@@ -67,7 +68,8 @@ public class ContextTest {
             config.bind(Component.class, instance);
             Context context = config.getContext();
 
-            ParameterizedType type = (ParameterizedType) new TypeLiteral<List<Component>>() {}.getType();
+            ParameterizedType type = (ParameterizedType) new TypeLiteral<List<Component>>() {
+            }.getType();
 
             assertTrue(context.get(type).isEmpty());
         }
@@ -133,10 +135,12 @@ public class ContextTest {
         }
 
         public static Stream<Arguments> should_throw_exception_if_dependency_not_found() {
-            return Stream.of(Arguments.of(Named.of("Inject Constructor", DependencyCheck.MissingDependencyConstructor.class)),
-                    Arguments.of(Named.of("Inject Field", DependencyCheck.MissingDependencyFiled.class)),
-                    Arguments.of(Named.of("Inject Method", DependencyCheck.MissingDependencyMethod.class))
-                    );
+            return Stream.of(Arguments.of(Named.of("Inject Constructor", MissingDependencyConstructor.class)),
+                    Arguments.of(Named.of("Inject Field", MissingDependencyFiled.class)),
+                    Arguments.of(Named.of("Inject Method", MissingDependencyMethod.class)),
+                    Arguments.of(Named.of("Provider in Inject Constructor", MissingDependencyProviderConstructor.class)),
+                    Arguments.of(Named.of("Provider in Inject Field", MissingDependencyProviderField.class)),
+                    Arguments.of(Named.of("Provider in Inject Method", MissingDependencyProviderMethod.class)));
         }
 
         static class MissingDependencyConstructor implements Component {
@@ -153,6 +157,23 @@ public class ContextTest {
         static class MissingDependencyMethod implements Component {
             @Inject
             public void install(Dependency dependency) {
+            }
+        }
+
+        static class MissingDependencyProviderConstructor implements Component {
+            @Inject
+            public MissingDependencyProviderConstructor(Provider<Dependency> dependencyProvider) {
+            }
+        }
+
+        static class MissingDependencyProviderField implements Component {
+            @Inject
+            Provider<Dependency> dependency;
+        }
+
+        static class MissingDependencyProviderMethod implements Component {
+            @Inject
+            public void install(Provider<Dependency> dependencyProvider) {
             }
         }
 
@@ -178,6 +199,21 @@ public class ContextTest {
             assertTrue(components.contains(Component.class));
             assertTrue(components.contains(Dependency.class));
             assertTrue(components.contains(AnotherDependency.class));
+        }
+
+        static class CyclicDependencyProviderConstructor implements Dependency {
+            @Inject
+            public CyclicDependencyProviderConstructor(Provider<Component> componentProvider) {
+            }
+        }
+
+        @Test
+        public void should_not_throw_exception_if_cyclic_dependency_via_provider() {
+            config.bind(Component.class, ComponentWithInjectConstructor.class);
+            config.bind(Dependency.class, CyclicDependencyProviderConstructor.class);
+
+            Context context = config.getContext();
+            assertTrue(context.get(Component.class).isPresent());
         }
     }
 }
