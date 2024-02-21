@@ -1,5 +1,6 @@
 package geektime.tdd.di;
 
+import java.awt.*;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -7,24 +8,41 @@ import java.util.Optional;
 
 public interface Context {
 
-    Optional get(Ref ref);
+    <ComponentType> Optional<ComponentType> get(Ref<ComponentType> ref);
 
-    class Ref {
+    class Ref<ComponentType> {
+
+        public static <ComponentType> Ref<ComponentType> of(Class<ComponentType> component) {
+            return new Ref(component);
+        }
+
+        public static Ref of(Type type) {
+            return new Ref(type);
+        }
+
         private Type container;
         private Class<?> component;
 
-        public static Ref of(Type type) {
-            if (type instanceof ParameterizedType container) return new Ref(container);
-            return new Ref(((Class<?>) type));
+        Ref(Type type) {
+            init(type);
         }
 
-        Ref(Class<?> component) {
-            this.component = component;
+        Ref(Class<ComponentType> component) {
+            init(component);
         }
 
-        Ref(ParameterizedType type) {
-            this.container = type.getRawType();
-            this.component = (Class<?>) type.getActualTypeArguments()[0];
+        protected Ref() {
+            Type type = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+            init(type);
+        }
+
+        private void init(Type type) {
+            if (type instanceof ParameterizedType container) {
+                this.container = container.getRawType();
+                this.component = ((Class<?>) container.getActualTypeArguments()[0]);
+            } else {
+                this.component = (Class<?>) type;
+            }
         }
 
         public boolean isContainerType() {

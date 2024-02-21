@@ -38,13 +38,13 @@ public class ContextTest {
             };
             config.bind(Component.class, instance);
             Context context = config.getContext();
-            assertSame(instance, ((Optional<?>) context.get(Context.Ref.of(Component.class))).get());
+            assertSame(instance, context.get(Context.Ref.of(Component.class)).get());
         }
 
         @Test
         public void should_return_empty_if_component_not_defined() {
             Context context = config.getContext();
-            Optional<Component> component = (Optional) context.get(Context.Ref.of(Component.class));
+            Optional<Component> component = context.get(Context.Ref.of(Component.class));
             assertTrue(component.isEmpty());
         }
 
@@ -55,10 +55,7 @@ public class ContextTest {
             config.bind(Component.class, instance);
             Context context = config.getContext();
 
-            ParameterizedType type = (ParameterizedType) new TypeLiteral<Provider<Component>>() {
-            }.getType();
-
-            Provider<Component> provider = ((Provider<Component>) ((Optional<?>) context.get(Context.Ref.of(type))).get());
+            Provider<Component> provider = context.get(new Context.Ref<Provider<Component>>(){}).get();
             assertSame(instance, provider.get());
         }
 
@@ -69,16 +66,7 @@ public class ContextTest {
             config.bind(Component.class, instance);
             Context context = config.getContext();
 
-            ParameterizedType type = (ParameterizedType) new TypeLiteral<List<Component>>() {
-            }.getType();
-
-            assertTrue(context.get(Context.Ref.of(type)).isEmpty());
-        }
-
-        static abstract class TypeLiteral<T> {
-            public Type getType() {
-                return ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-            }
+            assertTrue(context.get(new Context.Ref<List<Component>>(){}).isEmpty());
         }
 
     }
