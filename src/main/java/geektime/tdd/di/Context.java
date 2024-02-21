@@ -20,7 +20,7 @@ public interface Context {
         }
 
         private Type container;
-        private Class<?> component;
+        private Class<ComponentType> component;
 
         Ref(Type type) {
             init(type);
@@ -34,9 +34,9 @@ public interface Context {
         private void init(Type type) {
             if (type instanceof ParameterizedType container) {
                 this.container = container.getRawType();
-                this.component = ((Class<?>) container.getActualTypeArguments()[0]);
+                this.component = (Class<ComponentType>) container.getActualTypeArguments()[0];
             } else {
-                this.component = (Class<?>) type;
+                this.component = (Class<ComponentType>) type;
             }
         }
 
