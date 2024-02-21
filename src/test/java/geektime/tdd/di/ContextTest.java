@@ -12,8 +12,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.internal.util.collections.Sets;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +39,62 @@ public class ContextTest {
             assertSame(instance, context.get(Context.Ref.of(Component.class)).get());
         }
 
+        @ParameterizedTest(name = "supporting {0}")
+        @MethodSource
+        public void should_bind_type_to_an_injectable_component(Class<? extends Component> componentType) {
+            Dependency dependency = new Dependency() {
+            };
+            config.bind(Dependency.class, dependency);
+            config.bind(Component.class, componentType);
+
+            Optional<Component> component = config.getContext().get(Context.Ref.of(Component.class));
+
+            assertTrue(component.isPresent());
+            assertSame(dependency, component.get().dependency());
+        }
+
+        public static Stream<Arguments> should_bind_type_to_an_injectable_component() {
+            return Stream.of(Arguments.of(Named.of("Constructor Injection", TypeBinding.ConstructorInjection.class)),
+                    Arguments.of(Named.of("Filed Injection", TypeBinding.FieldInjection.class)),
+                    Arguments.of(Named.of("Method Injection", TypeBinding.MethodInjection.class)));
+        }
+
+        static class ConstructorInjection implements Component{
+            Dependency dependency;
+
+            @Inject
+            public ConstructorInjection(Dependency dependency) {
+                this.dependency = dependency;
+            }
+
+            @Override
+            public Dependency dependency() {
+                return dependency;
+            }
+        }
+
+        static class FieldInjection implements Component{
+            @Inject
+            Dependency dependency;
+            @Override
+            public Dependency dependency() {
+                return dependency;
+            }
+        }
+
+        static class MethodInjection implements Component{
+            Dependency dependency;
+
+            @Inject
+            void install(Dependency dependency) {
+                this.dependency = dependency;
+            }
+            @Override
+            public Dependency dependency() {
+                return dependency;
+            }
+        }
+
         @Test
         public void should_return_empty_if_component_not_defined() {
             Context context = config.getContext();
@@ -55,7 +109,8 @@ public class ContextTest {
             config.bind(Component.class, instance);
             Context context = config.getContext();
 
-            Provider<Component> provider = context.get(new Context.Ref<Provider<Component>>(){}).get();
+            Provider<Component> provider = context.get(new Context.Ref<Provider<Component>>() {
+            }).get();
             assertSame(instance, provider.get());
         }
 
@@ -66,8 +121,17 @@ public class ContextTest {
             config.bind(Component.class, instance);
             Context context = config.getContext();
 
-            assertTrue(context.get(new Context.Ref<List<Component>>(){}).isEmpty());
+            assertTrue(context.get(new Context.Ref<List<Component>>() {
+            }).isEmpty());
         }
+
+        @Nested
+        public class WithQualifier {
+            //TODO binding component with qualifier
+            //TODO binding component with multi qualifiers
+            //TODO throw illegal component if illegal qualifier
+        }
+
 
     }
 
