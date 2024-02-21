@@ -268,6 +268,12 @@ public class ContextTest {
             Context context = config.getContext();
             assertTrue(context.get(Context.Ref.of(Component.class)).isPresent());
         }
+
+        @Nested
+        public class WithQualifier {
+            //TODO dependency missing  if qualifier not match
+            //TODO check cyclic dependencies with qualifier
+        }
     }
 }
 
