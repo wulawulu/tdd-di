@@ -1,6 +1,5 @@
 package geektime.tdd.di;
 
-import java.awt.*;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -27,10 +26,6 @@ public interface Context {
             init(type);
         }
 
-        Ref(Class<ComponentType> component) {
-            init(component);
-        }
-
         protected Ref() {
             Type type = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
             init(type);
@@ -45,16 +40,16 @@ public interface Context {
             }
         }
 
-        public boolean isContainerType() {
-            return container != null;
-        }
-
         public Type getContainer() {
             return container;
         }
 
         public Class<?> getComponent() {
             return component;
+        }
+
+        public boolean isContainerType() {
+            return container != null;
         }
 
         @Override
