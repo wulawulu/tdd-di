@@ -12,6 +12,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.internal.util.collections.Sets;
 
+import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -127,8 +128,64 @@ public class ContextTest {
 
         @Nested
         public class WithQualifier {
-            //TODO binding component with qualifier
+            @Test
+            public void should_bind_instance_with_qualifier() {
+                Component instance = new Component() {
+                };
+                config.bind(Component.class,instance,new NamedLiteral("ChosenOne"));
+
+                Context context = config.getContext();
+
+                Component chosenOne =context.get(Context.Ref.of(Component.class, new NamedLiteral("ChosenOne"))).get();
+
+                assertSame(instance,chosenOne);
+            }
+
+            @Test
+            public void should_bind_type_with_qualifier() {
+                Dependency dependency = new Dependency() {
+                };
+                config.bind(Dependency.class, dependency);
+                config.bind(Component.class, ConstructorInjection.class,new NamedLiteral("ChosenOne"));
+
+                Context context = config.getContext();
+
+                Component chosenOne =context.get(Context.Ref.of(Component.class, new NamedLiteral("ChosenOne"))).get();
+
+                assertSame(dependency,chosenOne.dependency());
+            }
+
             //TODO binding component with multi qualifiers
+            @Test
+            public void should_bind_instance_with_multi_qualifiers() {
+                Component instance = new Component() {
+                };
+                config.bind(Component.class,instance,new NamedLiteral("ChosenOne"),new NamedLiteral("ChosenTwo"));
+
+                Context context = config.getContext();
+
+                Component chosenOne =context.get(Context.Ref.of(Component.class, new NamedLiteral("ChosenOne"))).get();
+                Component ChosenTwo =context.get(Context.Ref.of(Component.class, new NamedLiteral("ChosenTwo"))).get();
+
+                assertSame(instance,ChosenTwo);
+                assertSame(instance,chosenOne);
+            }
+
+            @Test
+            public void should_bind_type_with_multi_qualifiers() {
+                Dependency dependency = new Dependency() {
+                };
+                config.bind(Dependency.class, dependency);
+                config.bind(Component.class, ConstructorInjection.class,new NamedLiteral("ChosenOne"),new NamedLiteral("ChosenTwo"));
+
+                Context context = config.getContext();
+
+                Component chosenOne =context.get(Context.Ref.of(Component.class, new NamedLiteral("ChosenOne"))).get();
+                Component ChosenTwo =context.get(Context.Ref.of(Component.class, new NamedLiteral("ChosenTwo"))).get();
+
+                assertSame(chosenOne.dependency(),ChosenTwo.dependency());
+            }
+
             //TODO throw illegal component if illegal qualifier
         }
 
@@ -277,3 +334,10 @@ public class ContextTest {
     }
 }
 
+
+record NamedLiteral(String value) implements jakarta.inject.Named{
+    @Override
+    public Class<? extends Annotation> annotationType() {
+        return jakarta.inject.Named.class;
+    }
+}

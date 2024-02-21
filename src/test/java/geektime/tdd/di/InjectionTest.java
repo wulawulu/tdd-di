@@ -89,7 +89,6 @@ public class InjectionTest {
                 assertArrayEquals(new Context.Ref[]{Context.Ref.of(dependencyProviderType)}, provider.getDependencies().toArray());
             }
 
-            //TODO Inject with qualifier
         }
 
         @Nested
@@ -129,12 +128,13 @@ public class InjectionTest {
             public void should_throw_exception_if_no_inject_nor_default_constructor_provided() {
                 assertThrows(IllegalComponentException.class, () -> new InjectionProvider<>(NoInjectNorDefaultConstructor.class));
             }
-
-            //TODO throw illegal component if illegal qualifier given to injection point
-
         }
 
-
+        @Nested
+        class WithQualifier{
+            //TODO Inject with qualifier
+            //TODO throw illegal component if illegal qualifier given to injection point
+        }
     }
 
     @Nested
@@ -186,8 +186,6 @@ public class InjectionTest {
                 assertArrayEquals(new Context.Ref[]{Context.Ref.of(dependencyProviderType)}, provider.getDependencies().toArray());
             }
 
-            //TODO Inject with qualifier
-
         }
 
         @Nested
@@ -202,10 +200,12 @@ public class InjectionTest {
             public void should_throw_exception_if_component_filed_is_final() {
                 assertThrows(IllegalComponentException.class, () -> new InjectionProvider<>(FinalInjectClass.class));
             }
+        }
 
+        @Nested
+        class WithQualifier{
+            //TODO Inject with qualifier
             //TODO throw illegal component if illegal qualifier given to injection point
-
-
         }
     }
 
@@ -323,9 +323,6 @@ public class InjectionTest {
                 InjectionProvider<ProviderInjectMethod> provider = new InjectionProvider<>(ProviderInjectMethod.class);
                 assertArrayEquals(new Context.Ref[]{Context.Ref.of(dependencyProviderType)}, provider.getDependencies().toArray());
             }
-
-            //TODO Inject with qualifier
-
         }
 
         @Nested
@@ -341,7 +338,11 @@ public class InjectionTest {
             public void should_throw_exception_if_type_parameter_defined() {
                 assertThrows(IllegalComponentException.class, () -> new InjectionProvider<>(ParameterDefinedClass.class));
             }
+        }
 
+        @Nested
+        class WithQualifier{
+            //TODO Inject with qualifier
             //TODO throw illegal component if illegal qualifier given to injection point
         }
     }
