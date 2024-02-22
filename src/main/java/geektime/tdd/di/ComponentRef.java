@@ -33,9 +33,9 @@ public class ComponentRef<ComponentType> {
     }
 
     private void init(Type type, Annotation qualifier) {
-        if (type instanceof ParameterizedType container) {
-            this.container = container.getRawType();
-            this.component = new Component((Class<ComponentType>) container.getActualTypeArguments()[0], qualifier);
+        if (type instanceof ParameterizedType containerType) {
+            this.container = containerType.getRawType();
+            this.component = new Component((Class<ComponentType>) containerType.getActualTypeArguments()[0], qualifier);
         } else {
             this.component = new Component((Class<ComponentType>) type, qualifier);
         }
