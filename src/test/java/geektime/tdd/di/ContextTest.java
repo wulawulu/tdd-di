@@ -3,6 +3,7 @@ package geektime.tdd.di;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
+import jakarta.inject.Qualifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Nested;
@@ -13,12 +14,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.internal.util.collections.Sets;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ContextTest {
@@ -129,45 +133,17 @@ public class ContextTest {
         @Nested
         public class WithQualifier {
             @Test
-            public void should_bind_instance_with_qualifier() {
-                TestComponent instance = new TestComponent() {
-                };
-                config.bind(TestComponent.class,instance,new NamedLiteral("ChosenOne"));
-
-                Context context = config.getContext();
-
-                TestComponent chosenOne =context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenOne"))).get();
-
-                assertSame(instance,chosenOne);
-            }
-
-            @Test
-            public void should_bind_type_with_qualifier() {
-                Dependency dependency = new Dependency() {
-                };
-                config.bind(Dependency.class, dependency);
-                config.bind(TestComponent.class, ConstructorInjection.class,new NamedLiteral("ChosenOne"));
-
-                Context context = config.getContext();
-
-                TestComponent chosenOne =context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenOne"))).get();
-
-                assertSame(dependency,chosenOne.dependency());
-            }
-
-            //TODO binding component with multi qualifiers
-            @Test
             public void should_bind_instance_with_multi_qualifiers() {
                 TestComponent instance = new TestComponent() {
                 };
-                config.bind(TestComponent.class,instance,new NamedLiteral("ChosenOne"),new NamedLiteral("ChosenTwo"));
+                config.bind(TestComponent.class,instance,new NamedLiteral("ChosenOne"),new SkywalkerLiteral());
 
                 Context context = config.getContext();
 
                 TestComponent chosenOne =context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenOne"))).get();
-                TestComponent ChosenTwo =context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenTwo"))).get();
+                TestComponent skywalker =context.get(ComponentRef.of(TestComponent.class, new SkywalkerLiteral())).get();
 
-                assertSame(instance,ChosenTwo);
+                assertSame(instance,skywalker);
                 assertSame(instance,chosenOne);
             }
 
@@ -176,17 +152,32 @@ public class ContextTest {
                 Dependency dependency = new Dependency() {
                 };
                 config.bind(Dependency.class, dependency);
-                config.bind(TestComponent.class, ConstructorInjection.class,new NamedLiteral("ChosenOne"),new NamedLiteral("ChosenTwo"));
+                config.bind(TestComponent.class, ConstructorInjection.class,new NamedLiteral("ChosenOne"),new SkywalkerLiteral());
 
                 Context context = config.getContext();
 
                 TestComponent chosenOne =context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenOne"))).get();
-                TestComponent ChosenTwo =context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenTwo"))).get();
+                TestComponent skywalker =context.get(ComponentRef.of(TestComponent.class, new SkywalkerLiteral())).get();
 
-                assertSame(chosenOne.dependency(),ChosenTwo.dependency());
+                assertSame(dependency,chosenOne.dependency());
+                assertSame(dependency,skywalker.dependency());
             }
 
-            //TODO throw illegal component if illegal qualifier
+            @Test
+            public void should_throw_exception_if_illegal_qualifier_given_to_instance() {
+                TestComponent instance = new TestComponent() {
+                };
+                assertThrows(IllegalComponentException.class,()->config.bind(TestComponent.class,instance,new TestLiteral()));
+            }
+
+            @Test
+            public void should_throw_exception_if_illegal_qualifier_given_to_component() {
+                Dependency dependency = new Dependency() {
+                };
+                config.bind(Dependency.class, dependency);
+                assertThrows(IllegalComponentException.class,()->config.bind(TestComponent.class, ConstructorInjection.class,new TestLiteral()));
+
+            }
         }
 
 
@@ -339,5 +330,25 @@ record NamedLiteral(String value) implements jakarta.inject.Named{
     @Override
     public Class<? extends Annotation> annotationType() {
         return jakarta.inject.Named.class;
+    }
+}
+
+@Documented
+@Retention(RUNTIME)
+@Qualifier
+@interface Skywalker {
+}
+
+record SkywalkerLiteral() implements Skywalker {
+    @Override
+    public Class<? extends Annotation> annotationType() {
+        return Skywalker.class;
+    }
+}
+
+record TestLiteral() implements Test {
+    @Override
+    public Class<? extends Annotation> annotationType() {
+        return Test.class;
     }
 }
