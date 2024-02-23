@@ -319,7 +319,6 @@ public class ContextTest {
 
         @Nested
         public class WithQualifier {
-            //TODO dependency missing  if qualifier not match
 
             static class InjectionConstructor {
                 @Inject
@@ -331,7 +330,7 @@ public class ContextTest {
             public void should_throw_exception_if_dependency_with_qualifier_not_found() {
                 config.bind(Dependency.class, new Dependency() {
                 });
-                config.bind(InjectionConstructor.class, InjectionConstructor.class,new NamedLiteral("Owner"));
+                config.bind(InjectionConstructor.class, InjectionConstructor.class, new NamedLiteral("Owner"));
 
                 DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class, () -> config.getContext());
 
@@ -339,7 +338,32 @@ public class ContextTest {
                 assertEquals(new Component(Dependency.class, new SkywalkerLiteral()), exception.getDependency());
 
             }
+
             //TODO check cyclic dependencies with qualifier
+            // A -> @Skywalker A -> @Named A(instance0
+            static class SkywalkerDependency implements Dependency {
+                @Inject
+                public SkywalkerDependency(@jakarta.inject.Named("ChosenOne") Dependency dependency) {
+                }
+            }
+
+            static class NotCyclicDependency implements Dependency {
+                @Inject
+
+                public NotCyclicDependency(@Skywalker Dependency dependency) {
+                }
+            }
+
+            @Test
+            public void should_not_throw_exception_if_component_with_same_type_taged_with_different_qualifier() {
+                Dependency instance = new Dependency() {
+                };
+                config.bind(Dependency.class, instance, new NamedLiteral("ChosenOne"));
+                config.bind(Dependency.class, SkywalkerDependency.class, new SkywalkerLiteral());
+                config.bind(Dependency.class, NotCyclicDependency.class);
+
+                assertDoesNotThrow(() -> config.getContext());
+            }
         }
     }
 }
@@ -359,6 +383,10 @@ record NamedLiteral(String value) implements jakarta.inject.Named {
         return false;
     }
 
+    @Override
+    public int hashCode() {
+        return "value".hashCode() * 127 ^ value.hashCode();
+    }
 }
 
 @Documented
