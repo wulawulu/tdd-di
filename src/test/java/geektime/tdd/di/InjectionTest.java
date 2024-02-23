@@ -1,6 +1,7 @@
 package geektime.tdd.di;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -68,7 +69,7 @@ public class InjectionTest {
                 assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class)}, provider.getDependencies().toArray());
             }
 
-            static class ProviderInjectConstructor{
+            static class ProviderInjectConstructor {
                 Provider<Dependency> dependency;
 
                 @Inject
@@ -110,8 +111,13 @@ public class InjectionTest {
             }
 
             static class MultiInjectConstructors implements TestComponent {
-                @Inject public MultiInjectConstructors(AnotherDependency dependency) { }
-                @Inject public MultiInjectConstructors(Dependency dependency) { }
+                @Inject
+                public MultiInjectConstructors(AnotherDependency dependency) {
+                }
+
+                @Inject
+                public MultiInjectConstructors(Dependency dependency) {
+                }
             }
 
             @Test
@@ -131,8 +137,24 @@ public class InjectionTest {
         }
 
         @Nested
-        class WithQualifier{
+        class WithQualifier {
             //TODO Inject with qualifier
+            //TODO include qualifier with dependency
+
+            static class InjectionConstructor {
+                Dependency dependency;
+
+                @Inject
+                public InjectionConstructor(@Named("ChosenOne") Dependency dependency) {
+                    this.dependency = dependency;
+                }
+            }
+
+            @Test
+            public void should_include_qualifier_with_dependency() {
+                InjectionProvider<InjectionConstructor> provider = new InjectionProvider<>(InjectionConstructor.class);
+                assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))}, provider.getDependencies().toArray());
+            }
             //TODO throw illegal component if illegal qualifier given to injection point
         }
     }
@@ -169,7 +191,7 @@ public class InjectionTest {
                 assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class)}, provider.getDependencies().toArray());
             }
 
-            static class ProviderInjectField{
+            static class ProviderInjectField {
                 @Inject
                 Provider<Dependency> dependency;
             }
@@ -203,8 +225,9 @@ public class InjectionTest {
         }
 
         @Nested
-        class WithQualifier{
+        class WithQualifier {
             //TODO Inject with qualifier
+            //TODO include qualifier with dependency
             //TODO throw illegal component if illegal qualifier given to injection point
         }
     }
@@ -303,7 +326,7 @@ public class InjectionTest {
                 assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class)}, provider.getDependencies().toArray());
             }
 
-            static class ProviderInjectMethod{
+            static class ProviderInjectMethod {
                 Provider<Dependency> dependency;
 
                 @Inject
@@ -326,7 +349,7 @@ public class InjectionTest {
         }
 
         @Nested
-        class IllegalInjectMethod{
+        class IllegalInjectMethod {
 
             static class ParameterDefinedClass {
                 @Inject
@@ -341,8 +364,9 @@ public class InjectionTest {
         }
 
         @Nested
-        class WithQualifier{
+        class WithQualifier {
             //TODO Inject with qualifier
+            //TODO include qualifier with dependency
             //TODO throw illegal component if illegal qualifier given to injection point
         }
     }

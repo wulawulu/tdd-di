@@ -16,10 +16,7 @@ import org.mockito.internal.util.collections.Sets;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -81,6 +78,7 @@ public class ContextTest {
         static class FieldInjection implements TestComponent {
             @Inject
             Dependency dependency;
+
             @Override
             public Dependency dependency() {
                 return dependency;
@@ -94,6 +92,7 @@ public class ContextTest {
             void install(Dependency dependency) {
                 this.dependency = dependency;
             }
+
             @Override
             public Dependency dependency() {
                 return dependency;
@@ -136,15 +135,15 @@ public class ContextTest {
             public void should_bind_instance_with_multi_qualifiers() {
                 TestComponent instance = new TestComponent() {
                 };
-                config.bind(TestComponent.class,instance,new NamedLiteral("ChosenOne"),new SkywalkerLiteral());
+                config.bind(TestComponent.class, instance, new NamedLiteral("ChosenOne"), new SkywalkerLiteral());
 
                 Context context = config.getContext();
 
-                TestComponent chosenOne =context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenOne"))).get();
-                TestComponent skywalker =context.get(ComponentRef.of(TestComponent.class, new SkywalkerLiteral())).get();
+                TestComponent chosenOne = context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenOne"))).get();
+                TestComponent skywalker = context.get(ComponentRef.of(TestComponent.class, new SkywalkerLiteral())).get();
 
-                assertSame(instance,skywalker);
-                assertSame(instance,chosenOne);
+                assertSame(instance, skywalker);
+                assertSame(instance, chosenOne);
             }
 
             @Test
@@ -152,22 +151,22 @@ public class ContextTest {
                 Dependency dependency = new Dependency() {
                 };
                 config.bind(Dependency.class, dependency);
-                config.bind(TestComponent.class, ConstructorInjection.class,new NamedLiteral("ChosenOne"),new SkywalkerLiteral());
+                config.bind(TestComponent.class, ConstructorInjection.class, new NamedLiteral("ChosenOne"), new SkywalkerLiteral());
 
                 Context context = config.getContext();
 
-                TestComponent chosenOne =context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenOne"))).get();
-                TestComponent skywalker =context.get(ComponentRef.of(TestComponent.class, new SkywalkerLiteral())).get();
+                TestComponent chosenOne = context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenOne"))).get();
+                TestComponent skywalker = context.get(ComponentRef.of(TestComponent.class, new SkywalkerLiteral())).get();
 
-                assertSame(dependency,chosenOne.dependency());
-                assertSame(dependency,skywalker.dependency());
+                assertSame(dependency, chosenOne.dependency());
+                assertSame(dependency, skywalker.dependency());
             }
 
             @Test
             public void should_throw_exception_if_illegal_qualifier_given_to_instance() {
                 TestComponent instance = new TestComponent() {
                 };
-                assertThrows(IllegalComponentException.class,()->config.bind(TestComponent.class,instance,new TestLiteral()));
+                assertThrows(IllegalComponentException.class, () -> config.bind(TestComponent.class, instance, new TestLiteral()));
             }
 
             @Test
@@ -175,9 +174,10 @@ public class ContextTest {
                 Dependency dependency = new Dependency() {
                 };
                 config.bind(Dependency.class, dependency);
-                assertThrows(IllegalComponentException.class,()->config.bind(TestComponent.class, ConstructorInjection.class,new TestLiteral()));
-
+                assertThrows(IllegalComponentException.class, () -> config.bind(TestComponent.class, ConstructorInjection.class, new TestLiteral()));
             }
+
+            //TODO Provider
         }
 
 
@@ -231,8 +231,8 @@ public class ContextTest {
         public void should_throw_exception_if_dependency_not_found(Class<? extends TestComponent> component) {
             config.bind(TestComponent.class, component);
             DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class, () -> config.getContext());
-            assertEquals(Dependency.class, exception.getDependency());
-            assertEquals(TestComponent.class, exception.getComponent());
+            assertEquals(Dependency.class, exception.getDependency().type());
+            assertEquals(TestComponent.class, exception.getComponent().type());
         }
 
         public static Stream<Arguments> should_throw_exception_if_dependency_not_found() {
@@ -320,17 +320,45 @@ public class ContextTest {
         @Nested
         public class WithQualifier {
             //TODO dependency missing  if qualifier not match
+
+            static class InjectionConstructor {
+                @Inject
+                public InjectionConstructor(@Skywalker Dependency dependency) {
+                }
+            }
+
+            @Test
+            public void should_throw_exception_if_dependency_with_qualifier_not_found() {
+                config.bind(Dependency.class, new Dependency() {
+                });
+                config.bind(InjectionConstructor.class, InjectionConstructor.class,new NamedLiteral("Owner"));
+
+                DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class, () -> config.getContext());
+
+                assertEquals(new Component(InjectionConstructor.class, new NamedLiteral("Owner")), exception.getComponent());
+                assertEquals(new Component(Dependency.class, new SkywalkerLiteral()), exception.getDependency());
+
+            }
             //TODO check cyclic dependencies with qualifier
         }
     }
 }
 
 
-record NamedLiteral(String value) implements jakarta.inject.Named{
+record NamedLiteral(String value) implements jakarta.inject.Named {
     @Override
     public Class<? extends Annotation> annotationType() {
         return jakarta.inject.Named.class;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof jakarta.inject.Named named) {
+            return Objects.equals(value, named.value());
+        }
+        return false;
+    }
+
 }
 
 @Documented
@@ -343,6 +371,11 @@ record SkywalkerLiteral() implements Skywalker {
     @Override
     public Class<? extends Annotation> annotationType() {
         return Skywalker.class;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Skywalker;
     }
 }
 
