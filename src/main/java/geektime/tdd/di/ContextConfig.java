@@ -44,13 +44,13 @@ public class ContextConfig {
         return new Context() {
 
             @Override
-            public <ComponentType> Optional<ComponentType> get(ComponentRef<ComponentType> componentRef) {
-                if (componentRef.isContainerType()) {
-                    if (componentRef.getContainer() != Provider.class) return Optional.empty();
-                    return (Optional<ComponentType>) Optional.ofNullable(getProvider(componentRef))
+            public <ComponentType> Optional<ComponentType> get(ComponentRef<ComponentType> ref) {
+                if (ref.isContainer()) {
+                    if (ref.getContainer() != Provider.class) return Optional.empty();
+                    return (Optional<ComponentType>) Optional.ofNullable(getProvider(ref))
                             .map(provider -> (Provider<Object>) () -> (ComponentType) provider.get(this));
                 }
-                return Optional.ofNullable(getProvider(componentRef)).map(provider -> (ComponentType) provider.get(this));
+                return Optional.ofNullable(getProvider(ref)).map(provider -> (ComponentType) provider.get(this));
             }
 
         };
@@ -64,7 +64,7 @@ public class ContextConfig {
         for (ComponentRef dependency : components.get(component).getDependencies()) {
             if (!components.containsKey(dependency.component()))
                 throw new DependencyNotFoundException(component, dependency.component());
-            if (!dependency.isContainerType()) {
+            if (!dependency.isContainer()) {
                 if (visiting.contains(dependency.component()))
                     throw new CyclicDependenciesFoundException(visiting);
                 visiting.push(dependency.component());

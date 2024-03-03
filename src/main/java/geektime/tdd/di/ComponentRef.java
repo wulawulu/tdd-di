@@ -51,8 +51,16 @@ public class ComponentRef<ComponentType> {
     }
 
 
-    public boolean isContainerType() {
+    public boolean isContainer() {
         return container != null;
+    }
+
+    public Component component() {
+        return component;
+    }
+
+    public Class<?> getComponentType() {
+        return component.type();
     }
 
     @Override
@@ -66,21 +74,5 @@ public class ComponentRef<ComponentType> {
     @Override
     public int hashCode() {
         return Objects.hash(container, component);
-    }
-
-    public Component component() {
-        return component;
-    }
-
-    public Class<?> getComponentType() {
-        return component.type();
-    }
-
-    @Override
-    public String toString() {
-        return "ComponentRef{" +
-                "container=" + container +
-                ", component=" + component +
-                '}';
     }
 }

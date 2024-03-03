@@ -339,8 +339,6 @@ public class ContextTest {
 
             }
 
-            //TODO check cyclic dependencies with qualifier
-            // A -> @Skywalker A -> @Named A(instance0
             static class SkywalkerDependency implements Dependency {
                 @Inject
                 public SkywalkerDependency(@jakarta.inject.Named("ChosenOne") Dependency dependency) {
@@ -364,6 +362,8 @@ public class ContextTest {
 
                 assertDoesNotThrow(() -> config.getContext());
             }
+
+            //TODO dependency missing if qualifier not match
         }
     }
 }
