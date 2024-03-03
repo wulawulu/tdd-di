@@ -4,10 +4,7 @@ package geektime.tdd.di;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Qualifier;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -113,6 +110,7 @@ public class ContextTest {
             config.bind(TestComponent.class, instance);
             Context context = config.getContext();
 
+
             Provider<TestComponent> provider = context.get(new ComponentRef<Provider<TestComponent>>() {
             }).get();
             assertSame(instance, provider.get());
@@ -131,6 +129,8 @@ public class ContextTest {
 
         @Nested
         public class WithQualifier {
+            TestComponent instance = new TestComponent() {
+            };
             @Test
             public void should_bind_instance_with_multi_qualifiers() {
                 TestComponent instance = new TestComponent() {
@@ -164,8 +164,7 @@ public class ContextTest {
 
             @Test
             public void should_throw_exception_if_illegal_qualifier_given_to_instance() {
-                TestComponent instance = new TestComponent() {
-                };
+
                 assertThrows(IllegalComponentException.class, () -> config.bind(TestComponent.class, instance, new TestLiteral()));
             }
 
@@ -178,6 +177,15 @@ public class ContextTest {
             }
 
             //TODO Provider
+            @Test
+            public void should_retrieve_bind_type_as_provider() {
+                config.bind(TestComponent.class, instance, new NamedLiteral("ChosenOne"), new SkywalkerLiteral());
+
+                Optional<Provider<TestComponent>> provider = config.getContext().get(new ComponentRef<Provider<TestComponent>>(new SkywalkerLiteral()) {
+                });
+
+                assertTrue(provider.isPresent());
+            }
         }
 
 

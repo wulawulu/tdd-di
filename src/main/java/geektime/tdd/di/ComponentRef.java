@@ -37,6 +37,11 @@ public class ComponentRef<ComponentType> {
         init(type, null);
     }
 
+    protected ComponentRef(Annotation qualifier) {
+        Type type = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+        init(type, qualifier);
+    }
+
     private void init(Type type, Annotation qualifier) {
         if (type instanceof ParameterizedType containerType) {
             this.container = containerType.getRawType();
