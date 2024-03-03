@@ -13,15 +13,21 @@ import static java.util.Arrays.stream;
 import static java.util.stream.Stream.concat;
 
 class InjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
-    private final Constructor<T> injectConstructor;
     private final List<Field> injectFields;
     private final List<Method> injectMethods;
     private final List<ComponentRef> dependencies;
 
+
+    private Injectable<Constructor<T>> injectableConstructor;
+
     public InjectionProvider(Class<T> component) {
         if (Modifier.isAbstract(component.getModifiers())) throw new IllegalComponentException();
 
-        this.injectConstructor = getInjectConstructor(component);
+        Constructor<T> constructor = getInjectConstructor(component);
+        ComponentRef<?>[] required = stream(constructor.getParameters()).map(InjectionProvider::toComponentRef).toArray(ComponentRef<?>[]::new);
+        injectableConstructor= new Injectable<>(constructor, required);
+
+
         this.injectFields = getInjectFields(component);
         this.injectMethods = getInjectMethods(component);
 
@@ -37,7 +43,7 @@ class InjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
     @Override
     public T get(Context context) {
         try {
-            T instance = injectConstructor.newInstance(toDependencies(context, injectConstructor));
+            T instance = injectableConstructor.element.newInstance(injectableConstructor.toDependencies(context));
             for (Field field : injectFields) {
                 field.set(instance, toDependency(context, field));
             }
@@ -54,11 +60,17 @@ class InjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
     public List<ComponentRef> getDependencies() {
         return concat(
                 concat(
-                        stream(injectConstructor.getParameters()).map(InjectionProvider::toComponentRef),
+                        stream(injectableConstructor.required),
                         injectFields.stream().map(InjectionProvider::toComponentRef)),
                 injectMethods.stream().flatMap(m -> stream(m.getParameters())).map(InjectionProvider::toComponentRef)
         )
                 .toList();
+    }
+
+    static record Injectable<Element extends AccessibleObject>(Element element, ComponentRef<?>[] required) {
+        Object[] toDependencies(Context context) {
+            return stream(required).map(context::get).map(Optional::get).toArray();
+        }
     }
 
     private static ComponentRef toComponentRef(Field f) {
@@ -134,15 +146,15 @@ class InjectionProvider<T> implements ContextConfig.ComponentProvider<T> {
     }
 
     private static Object[] toDependencies(Context context, Executable executable) {
-        return stream(executable.getParameters()).map(p -> toDependency(context, p.getParameterizedType(), getQualifier(p))).toArray();
+        return stream(executable.getParameters()).map(p -> toDependency(context, toComponentRef(p))).toArray();
     }
 
     private static Object toDependency(Context context, Field field) {
-        return toDependency(context, field.getGenericType(), getQualifier(field));
+        return toDependency(context, toComponentRef(field));
     }
 
-    private static Object toDependency(Context context, Type type, Annotation qualifier) {
-        return context.get(ComponentRef.of(type,qualifier)).get();
+    private static Object toDependency(Context context, ComponentRef of) {
+        return context.get(of).get();
     }
 }
 
