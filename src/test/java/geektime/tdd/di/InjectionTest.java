@@ -272,7 +272,6 @@ public class InjectionTest {
                 InjectionProvider<InjectionFiled> provider = new InjectionProvider<>(InjectionFiled.class);
                 assertArrayEquals(new ComponentRef[]{ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))}, provider.getDependencies().toArray());
             }
-            //TODO throw illegal component if illegal qualifier given to injection point
 
             static class MultiQualifierInjectFiled {
                 @Inject
@@ -409,7 +408,7 @@ public class InjectionTest {
 
             static class ParameterDefinedClass {
                 @Inject
-                <T> void install(T t) {
+                <T> void install() {
                 }
             }
 
