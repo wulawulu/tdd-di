@@ -64,10 +64,6 @@ public class ComponentRef<ComponentType> {
         return component;
     }
 
-    public Class<?> getComponentType() {
-        return component.type();
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
