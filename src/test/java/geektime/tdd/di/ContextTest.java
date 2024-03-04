@@ -215,7 +215,6 @@ public class ContextTest {
                 assertSame(context.get(ComponentRef.of(Dependency.class)).get(), context.get(ComponentRef.of(Dependency.class)).get());
             }
 
-            //TODO bind component with customize scope annotation
             @Test
             public void should_bind_component_as_customized_scope() {
                 config.scope(Pooled.class, PooledProvider::new);
@@ -226,6 +225,25 @@ public class ContextTest {
 
             }
 
+            @Test
+            public void should_throw_exception_if_multi_scope_provided() {
+                assertThrows(IllegalComponentException.class, () -> config.bind(NotSingleton.class, NotSingleton.class, new SingletonLiteral(),new PooledLiteral()));
+            }
+            @Singleton @Pooled
+            static class MultiAnnotated{
+            }
+
+            @Test
+            public void should_throw_exception_if_multi_scope_annotated() {
+                assertThrows(IllegalComponentException.class, () -> config.bind(MultiAnnotated.class, MultiAnnotated.class));
+
+            }
+
+            @Test
+            public void should_throw_exception_if_scope_undefined() {
+                assertThrows(IllegalComponentException.class, () -> config.bind(NotSingleton.class, NotSingleton.class,new PooledLiteral()));
+
+            }
             @Nested
             public class WithQualifier{
                 @Test
